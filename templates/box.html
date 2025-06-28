@@ -1,39 +1,184 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>箱計算機</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-<body>
-    <h1>箱計算機</h1>
+{% extends "base.html" %}
+{% set tab = "box" %}
 
-    <form id="box-form">
-        <label>箱数: <input type="number" name="boxes" required></label><br>
-        <label>段数: <input type="number" name="levels" required></label><br>
-        <label>着席回転数: <input type="number" name="base_spin" id="base-spin"></label><br>
-        <label>現在回転数: <input type="number" name="now_spin" id="now-spin"></label><br>
-        <button type="submit">計算</button>
-    </form>
+{% block content %}
+<h4 class="mb-3">箱計算機</h4>
 
-    <div id="result"></div>
+<!-- ───────── ① 箱容量・段数の設定 ───────── -->
+<form id="cfgForm" class="card p-3 mb-4">
+  <div class="row g-2">
+    <div class="col-6">
+      <label class="form-label">一箱の玉数</label>
+      <input type="number" id="boxCap" class="form-control" placeholder="例: 1450">
+    </div>
+    <div class="col-6">
+      <label class="form-label">段数</label>
+      <input type="number" id="levels" class="form-control" placeholder="例: 5">
+    </div>
+  </div>
+  <button class="btn btn-primary w-100 mt-3">決定（ロック）</button>
+</form>
 
-    <script>
-        $("#box-form").on("submit", function(e) {
-            e.preventDefault();
-            $.post("/box", $(this).serialize(), function(data) {
-                let html = "";
-                html += "<h2>結果</h2>";
-                html += `<p>総玉数: ${data.total_balls}玉</p>`;
-                html += `<p>1250#${data.total_balls}</p>`;
-                if (data.rotation_rate !== null) {
-                    html += `<p>回転数差: ${data.spin_diff} 回</p>`;
-                    html += `<p>回転率: ${data.rotation_rate} 回/250玉</p>`;
-                }
-                $("#result").html(html);
-            });
-        });
-    </script>
-</body>
-</html>
+<!-- ───────── ② 持ち玉入力 ───────── -->
+<form id="holdForm" class="card p-3 mb-4" style="display:none;">
+  <label class="form-label">持ち玉</label>
+  <input type="number" id="hold" class="form-control mb-3">
+  <button class="btn btn-success w-100">計算</button>
+</form>
+
+<!-- ───────── ③ 箱・段の結果リスト ───────── -->
+<ul id="resultList" class="list-group mb-4"></ul>
+
+<!-- ───────── ④ 着席回転数 & 行生成 ───────── -->
+<form id="baseForm" class="card p-3 mb-3">
+  <label class="form-label">着席回転数</label>
+  <input type="number" id="base" class="form-control mb-2">
+  <button class="btn btn-primary w-100">決定</button>
+</form>
+<div id="spinArea"></div>
+
+<script>
+/* ───────── 0. LocalStorage 初期化 ───────── */
+const boxCapInp=document.getElementById("boxCap");
+const levelsInp=document.getElementById("levels");
+const holdInp  =document.getElementById("hold");
+const baseInp  =document.getElementById("base");
+const cfgForm  =document.getElementById("cfgForm");
+const holdForm =document.getElementById("holdForm");
+const resList  =document.getElementById("resultList");
+const spinArea =document.getElementById("spinArea");
+
+boxCapInp.value = localStorage.getItem("boxCap") || "";
+levelsInp.value = localStorage.getItem("levels") || "";
+holdInp.value   = localStorage.getItem("hold")   || "";
+baseInp.value   = localStorage.getItem("spinBase") || "";
+
+const savedBoxRows = JSON.parse(localStorage.getItem("boxRows")||"[]");
+const savedRows    = JSON.parse(localStorage.getItem("spinRows")||"[]");
+
+function showHold(){ holdForm.style.display =
+  (boxCapInp.value && levelsInp.value) ? "block":"none"; }
+showHold();
+
+/* ───────── 1. 箱容量・段数 決定 ───────── */
+cfgForm.onsubmit=e=>{
+  e.preventDefault();
+  if(!boxCapInp.value || !levelsInp.value) return;
+  localStorage.setItem("boxCap", boxCapInp.value);
+  localStorage.setItem("levels", levelsInp.value);
+  showHold();
+};
+
+/* ───────── 2. 持ち玉 → 箱段リスト計算 ───────── */
+holdForm.onsubmit= async e=>{
+  e.preventDefault();
+  const payload = new URLSearchParams({
+      hold   : holdInp.value||0,
+      box_cap: boxCapInp.value,
+      levels : levelsInp.value
+  });
+  localStorage.setItem("hold", holdInp.value||0);
+  const res  = await fetch("/box", {method:"POST", body:payload});
+  const data = await res.json();        // [{clip,desc,calc}, ...]
+  renderRows(data);
+  localStorage.setItem("boxRows", JSON.stringify(data));
+};
+
+function renderRows(rows){
+  resList.innerHTML="";
+  rows.forEach(d=>{
+    const li=document.createElement("li");
+    li.className="list-group-item bg-dark text-white";
+    li.innerHTML = `
+      <div class="d-flex justify-content-between">
+        <span class="fw-bold copy-label" data-clip="${d.clip}">${d.clip}</span>
+        <span class="text-info">${d.desc}</span>
+      </div>
+      ${d.calc?`<small>${d.calc}</small>`:''}`;
+    resList.appendChild(li);
+  });
+}
+/* 復元表示 */
+if(savedBoxRows.length) renderRows(savedBoxRows);
+
+/* ───────── 3. 回転数 行生成ロジック ───────── */
+function buildRow(idx, diff=null, rate=null, now=null){
+  const usage = 1250 * idx;
+  const row   = document.createElement("div");
+  row.className="mb-2";
+  row.innerHTML=`
+   <div class="d-flex justify-content-between align-items-center">
+      <span class="h6 mb-0 copy-label" data-clip="${usage}#${diff??''}">
+        ${usage}#${diff??''}
+      </span>
+      <div class="d-flex align-items-center gap-3">
+        <small class="fw-bold">${now??''}</small>
+        <small class="text-info">${rate??''}</small>
+      </div>
+    </div>
+    <div class="input-group mt-1 ${diff!==null?'d-none':''}">
+      <input type="number" min="0" class="form-control" placeholder="現在回転数">
+      <button class="btn btn-success">決定</button>
+    </div>`;
+  spinArea.appendChild(row);
+
+  if(diff!==null) return;  // 確定済みなら入力欄なし
+
+  const btn   = row.querySelector("button");
+  const input = row.querySelector("input");
+  btn.onclick = async ()=>{
+     const now  = Number(input.value || 0);
+     const base = Number(localStorage.getItem("spinBase") || 0);
+     if(!now || !base) return;
+
+     /* diff をサーバーに計算してもらう */
+     const res  = await fetch("/spin", {
+        method:"POST",
+        body:new URLSearchParams({ base, now })
+     });
+     const { diff } = await res.json();
+     const rate = (diff / usage * 250).toFixed(2);
+
+     /* ラベル書き換え＆コピー文 */
+     const label = row.querySelector(".copy-label");
+     label.textContent  = `${usage}#${diff}`;
+     label.dataset.clip = `${usage}#${diff}`;
+     const infos = row.querySelectorAll("small");
+     infos[0].textContent = now;
+     infos[1].textContent = rate;
+     row.querySelector(".input-group").classList.add("d-none");
+
+     /* 保存 */
+     savedRows.push({ idx, diff, rate, now });
+     localStorage.setItem("spinRows", JSON.stringify(savedRows));
+     buildRow(idx+1); // 次の行
+  };
+}
+
+/* 着席回転数決定 */
+document.getElementById("baseForm").onsubmit=e=>{
+  e.preventDefault();
+  if(!baseInp.value) return;
+  localStorage.setItem("spinBase", baseInp.value);
+  if(!spinArea.children.length) buildRow(1);
+};
+
+/* 復元 */
+if(savedRows.length){
+    savedRows.sort((a,b)=>a.idx-b.idx)
+             .forEach(r => buildRow(r.idx, r.diff, r.rate, r.now));
+    buildRow(savedRows[savedRows.length-1].idx + 1);
+}else if(baseInp.value){
+    buildRow(1);
+}
+
+/* ───────── 4. 全体リセット同期 ───────── */
+document.getElementById("reset").addEventListener("click", ()=>{
+  ["boxCap","levels","hold","boxRows",
+   "spinBase","spinRows"].forEach(k=>localStorage.removeItem(k));
+  resList.innerHTML="";
+  spinArea.innerHTML="";
+  showHold();
+});
+</script>
+{% endblock %}
