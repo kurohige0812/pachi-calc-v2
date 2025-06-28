@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>終了計算機</title>
+
+  <!-- 共通CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- 終了計算機専用の追加CSS -->
+  <style>
+    /* 終了計算機カードを少し幅広に */
+    .end-card { max-width: 640px; margin: 0 auto; }
+    .end-card textarea { height: 90px; }
+    #resultBox { min-height: 120px; }
+  </style>
+</head>
+<body>
+
+  <section class="card end-card">
+    <h1>終了計算機</h1>
+
+    <form id="endForm">
+      <!-- --- 基本入力 --- -->
+      <label>最終持込持出人名</label>
+      <input type="text" name="final_name" required>
+
+      <label>稼働開始前持金</label>
+      <input type="number" name="start_cash" value="0">
+
+      <label>稼働使用金額</label>
+      <input type="number" name="used_cash" value="0">
+
+      <!-- --- 給与 --- -->
+      <label>給与</label>
+      <select name="salary" id="salarySel">
+        <option value="11000" selected>11000</option>
+        <option value="10000">10000</option>
+        <option value="9000">9000</option>
+        <option value="12000">12000</option>
+        <option value="custom">その他</option>
+      </select>
+      <input
+        type="number"
+        id="customSalary"
+        name="custom_salary"
+        placeholder="金額を入力"
+        style="display: none;"
+      >
+
+      <!-- --- 経費・景品 --- -->
+      <label>経費</label>
+      <input type="number" name="expenses" value="0">
+
+      <label>景品交換</label>
+      <input type="number" name="exchange" value="0">
+
+      <!-- --- 玉野明細 --- -->
+      <label>玉野明細</label>
+      <textarea
+        name="details"
+        placeholder="例:\n持込現金〇〇#5000\n持出現金〇〇#3000"
+      ></textarea>
+
+      <!-- --- 追加コメント --- -->
+      <label>追加コメント</label>
+      <textarea
+        name="comments"
+        placeholder="店名〇〇\n開始貯玉：〇〇\n終了貯玉：〇〇"
+      ></textarea>
+
+      <button type="submit">決定</button>
+      <button type="reset" class="secondary">リセット</button>
+    </form>
+
+    <!-- --- 結果表示 --- -->
+    <h2>終了報告</h2>
+    <div id="resultBox" class="output"></div>
+    <button id="copyBtn" style="display:none;">コピー</button>
+  </section>
+
+  <!-- ===== JS ===== -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    /* 給与プルダウンで「その他」を選択したら自由入力へ切替 */
+    $("#salarySel").on("change", function () {
+      const custom = $(this).val() === "custom";
+      $("#customSalary").toggle(custom).prop

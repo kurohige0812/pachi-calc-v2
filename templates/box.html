@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>箱計算機</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>箱計算機</h1>
+
+    <form id="box-form">
+        <label>箱数: <input type="number" name="boxes" required></label><br>
+        <label>段数: <input type="number" name="levels" required></label><br>
+        <label>着席回転数: <input type="number" name="base_spin" id="base-spin"></label><br>
+        <label>現在回転数: <input type="number" name="now_spin" id="now-spin"></label><br>
+        <button type="submit">計算</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        $("#box-form").on("submit", function(e) {
+            e.preventDefault();
+            $.post("/box", $(this).serialize(), function(data) {
+                let html = "";
+                html += "<h2>結果</h2>";
+                html += `<p>総玉数: ${data.total_balls}玉</p>`;
+                html += `<p>1250#${data.total_balls}</p>`;
+                if (data.rotation_rate !== null) {
+                    html += `<p>回転数差: ${data.spin_diff} 回</p>`;
+                    html += `<p>回転率: ${data.rotation_rate} 回/250玉</p>`;
+                }
+                $("#result").html(html);
+            });
+        });
+    </script>
+</body>
+</html>

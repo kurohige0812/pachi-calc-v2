@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>貯玉・現金・1250計算機</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    .section { margin-bottom: 40px; border: 1px solid #ccc; padding: 20px; border-radius: 10px; }
+    input[type="number"], input[type="text"] { width: 100px; margin: 5px; }
+    button { margin: 5px; }
+    .result { margin-top: 10px; white-space: pre-wrap; background: #f9f9f9; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="section" id="tama-section">
+    <h2>1. 貯玉計算機</h2>
+    初期貯玉：<input type="number" id="tama-initial"> 現在の貯玉：<input type="number" id="tama-current">
+    <button onclick="calcTama()">決定</button>
+    <button onclick="resetTama()">リセット</button>
+    <div class="result" id="tama-result"></div>
+  </div>
+
+  <div class="section" id="cash-section">
+    <h2>2. 現金計算機</h2>
+    スタート現金：<input type="number" id="cash-start"> <button onclick="startCash()">決定</button>
+    <div id="cash-entries"></div>
+    <button onclick="endCash()">稼働終了</button>
+    <button onclick="resetCash()">リセット</button>
+    <div class="result" id="cash-result"></div>
+  </div>
+
+  <div class="section" id="calc1250-section">
+    <h2>3. 新1250計算機</h2>
+    着席回転数：<input type="number" id="base-spin"> <button onclick="resetSpin()">リセット</button><br>
+    現在回転数：<input type="number" id="now-spin">
+    <button onclick="calcSpin()">計算</button>
+    <br><br>
+    持ち玉：<input type="number" id="moti">
+    貯玉：<input type="number" id="tama">
+    現金：<input type="number" id="cash">
+    <button onclick="calc1250()">決定</button>
+    <button onclick="reset1250()">リセット</button>
+    <div class="result" id="result1250"></div>
+  </div>
+
+<script>
+// 1. 貯玉
+function calcTama() {
+  let ini = parseInt($('#tama-initial').val());
+  let now = parseInt($('#tama-current').val());
+  if (isNaN(ini) || isNaN(now)) return;
+  let used = ini - now;
+  $('#tama-result').text(`使用貯玉 ${used} 玉`).css('cursor', 'pointer').click(() => navigator.clipboard.writeText(`${used}`));
+}
+function resetTama() {
+  $('#tama-initial, #tama-current, #tama-result').val('').text('');
+}
+
+// 2. 現金
+let cashLog = [], total = 0;
+function startCash() {
+  let val = parseInt($('#cash-start').val());
+  if (isNaN(val)) return;
+  $('#cash-entries').empty();
+  cashLog = [];
+  for (let i = 1; i <= val; i++) {
+    let cashVal = 100 - (i - 1) * 5;
+    if (cashVal < 5) cashVal = 5;
+    $('<div>').text(`${i}枚目: ${cashVal} →`).appendTo('#cash-entries');
+    cashLog.push(cashVal);
+  }
+  total = cashLog.reduce((a, b) => a + b, 0);
+  $('#cash-result').html(`稼働使用現金 ${total} 円`).css('cursor', 'pointer').click(() => navigator.clipboard.writeText(`${total}`));
+}
+function endCash() {
+  let str = '';
+  for (let i = 0; i < cashLog.length; i++) {
+    str += `${i + 1}台目使用金額 ${cashLog[i]}円\n`;
+  }
+  str += `合計 ${total}円`;
+  $('#cash-result').text(str).css('cursor', 'pointer').click(() => navigator.clipboard.writeText(str));
+}
+function resetCash() {
+  $('#cash-start').val('');
+  $('#cash-entries').empty();
+  $('#cash-result').text('');
+  cashLog = [];
+  total = 0;
+}
+
+// 3. 着席回転数
+function resetSpin() {
+  $('#base-spin').val('');
+}
+function calcSpin() {
+  let base = parseInt($('#base-spin').val()) || 0;
+  let now = parseInt($('#now-spin').val());
+  if (isNaN(now)) return;
+  let diff = now - base;
+  $('#result1250').append(`\n回転数：${diff}回\n`).css('cursor', 'pointer');
+}
+function calc1250() {
+  let moti = parseInt($('#moti').val()) || 0;
+  let tama = parseInt($('#tama').val()) || 0;
+  let cash = parseInt($('#cash').val()) || 0;
+  let left = 1250;
+  let log = '';
+
+  if (moti >= left) {
+    log += `持ち玉 ${left} 使用\n`;
+  } else {
+    if (moti > 0) {
+      log += `持ち玉 ${moti} 使用\n`;
+      left -= moti;
+    }
+    if (tama >= left) {
+      log += `貯玉 ${left} 使用\n`;
+      left = 0;
+    } else {
+      if (tama > 0) {
+        log += `貯玉 ${tama} 使用\n`;
+        left -= tama;
+      }
+      if (left > 0) {
+        log += `現金 ${left} 使用\n`;
+      }
+    }
+  }
+  $('#result1250').append(log + '\n').css('cursor', 'pointer');
+}
+function reset1250() {
+  $('#moti, #tama, #cash, #result1250').val('').text('');
+}
+</script>
+</body>
+</html>
