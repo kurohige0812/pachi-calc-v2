@@ -23,14 +23,23 @@
     <div class="result" id="tama-result"></div>
   </div>
 
-  <div class="section" id="cash-section">
-    <h2>2. 現金計算機</h2>
-    スタート現金：<input type="number" id="cash-start"> <button onclick="startCash()">決定</button>
-    <div id="cash-entries"></div>
-    <button onclick="endCash()">稼働終了</button>
-    <button onclick="resetCash()">リセット</button>
-    <div class="result" id="cash-result"></div>
-  </div>
+ <div class="section" id="cash-section">
+  <h2>2. 現金計算機</h2>
+  <label>枚目：</label>
+  <select id="bill-number">
+    {% for i in range(1, 31) %}
+      <option value="{{ i }}">{{ i }}枚目</option>
+    {% endfor %}
+  </select>
+  <label>数字：</label>
+  <input type="number" id="cash-value" min="0" max="100" value="100">
+  <button onclick="addCashEntry()">決定</button>
+  <button onclick="endCash()">稼働終了</button>
+  <button onclick="resetCash()">リセット</button>
+  <div class="result" id="cash-log"></div>
+</div>
+
+
 
   <div class="section" id="calc1250-section">
     <h2>3. 新1250計算機</h2>
@@ -60,36 +69,47 @@ function resetTama() {
 }
 
 // 2. 現金
-let cashLog = [], total = 0;
-function startCash() {
-  let val = parseInt($('#cash-start').val());
-  if (isNaN(val)) return;
-  $('#cash-entries').empty();
-  cashLog = [];
-  for (let i = 1; i <= val; i++) {
-    let cashVal = 100 - (i - 1) * 5;
-    if (cashVal < 5) cashVal = 5;
-    $('<div>').text(`${i}枚目: ${cashVal} →`).appendTo('#cash-entries');
-    cashLog.push(cashVal);
-  }
-  total = cashLog.reduce((a, b) => a + b, 0);
-  $('#cash-result').html(`稼働使用現金 ${total} 円`).css('cursor', 'pointer').click(() => navigator.clipboard.writeText(`${total}`));
+let cashEntries = [];
+let cashTotal = 0;
+
+function addCashEntry() {
+  const bill = parseInt(document.getElementById("bill-number").value);
+  const val = parseInt(document.getElementById("cash-value").value);
+
+  if (isNaN(bill) || isNaN(val)) return;
+
+  let used = (bill - 1) * 10000 + (100 - val) * 100;
+  cashEntries.push({ bill, val, used });
+  updateCashLog();
 }
+
+function updateCashLog() {
+  let log = "";
+  cashTotal = 0;
+  for (let i = 0; i < cashEntries.length; i++) {
+    const e = cashEntries[i];
+    log += `${e.bill}枚目 (${e.val}) → 使用金額：${e.used.toLocaleString()}円\n`;
+    cashTotal += e.used;
+  }
+  document.getElementById("cash-log").textContent = log;
+}
+
 function endCash() {
-  let str = '';
-  for (let i = 0; i < cashLog.length; i++) {
-    str += `${i + 1}台目使用金額 ${cashLog[i]}円\n`;
+  let result = "";
+  for (let i = 0; i < cashEntries.length; i++) {
+    result += `${i + 1}台目使用金額：${cashEntries[i].used.toLocaleString()}円\n`;
   }
-  str += `合計 ${total}円`;
-  $('#cash-result').text(str).css('cursor', 'pointer').click(() => navigator.clipboard.writeText(str));
+  result += `稼働使用合計金額：${cashTotal.toLocaleString()}円`;
+  document.getElementById("cash-log").textContent = result;
+  navigator.clipboard.writeText(result);
 }
+
 function resetCash() {
-  $('#cash-start').val('');
-  $('#cash-entries').empty();
-  $('#cash-result').text('');
-  cashLog = [];
-  total = 0;
+  cashEntries = [];
+  cashTotal = 0;
+  document.getElementById("cash-log").textContent = "";
 }
+
 
 // 3. 着席回転数
 function resetSpin() {
