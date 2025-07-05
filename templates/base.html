@@ -23,14 +23,24 @@
 <!-- ナビバー -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3 mb-4">
   <div class="container-fluid">
-    <div class="navbar-nav">
-      <a class="nav-link {{ 'active' if tab == 'box' else '' }}" href="/">箱計算</a>
-      <a class="nav-link {{ 'active' if tab == 'spin' else '' }}" href="/spin">回転数</a>
-      <a class="nav-link {{ 'active' if tab == 'end' else '' }}" href="/end">終了</a>
-    </div>
+    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if tab == 'top' else '' }}" href="/">トップ</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if tab == 'box' else '' }}" href="/box">箱</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if tab == 'spin' else '' }}" href="/spin">回転数</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if tab == 'end' else '' }}" href="/end">終了</a>
+      </li>
+    </ul>
     <button class="btn btn-outline-light btn-reset" id="reset">リセット</button>
   </div>
 </nav>
+
 
 <!-- コンテンツ本体 -->
 <div class="container">
