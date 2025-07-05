@@ -12,19 +12,23 @@
 
 <section class="card end-card text-dark">
   <h1 class="mt-2">終了計算機</h1>
-
+  
   <form id="endForm" class="mb-3">
     <!-- --- 基本入力 --- -->
+    <p>最終持込持出人名</p>
     <label class="mt-2">最終持込持出人名</label>
     <input type="text"  name="final_name" class="form-control" required>
 
+    <p>稼働開始前持金</p>    
     <label class="mt-2">稼働開始前持金</label>
     <input type="number" name="start_cash" class="form-control" value="0">
 
+    <p>稼働使用金額</p>
     <label class="mt-2">稼働使用金額</label>
     <input type="number" name="used_cash" class="form-control" value="0">
 
     <!-- --- 給与 --- -->
+     <p>給与</p>
     <label class="mt-3">給与</label>
     <select name="salary" id="salarySel" class="form-select">
       <option value="11000" selected>11000</option>
@@ -37,21 +41,25 @@
            class="form-control mt-2" placeholder="金額を入力" style="display:none;">
 
     <!-- --- 経費・景品 --- -->
+     <p>経費</p>
     <label class="mt-3">経費</label>
     <input type="number" name="expenses" class="form-control" value="0">
-
+ 
+    <p>景品交換</p>
     <label class="mt-2">景品交換</label>
     <input type="number" name="exchange" class="form-control" value="0">
 
     <!-- --- ○○明細 --- -->
+     <p>○○明細</p>
     <label class="mt-3">○○明細</label>
     <textarea name="details" class="form-control"
-      placeholder="例:\n持込現金〇〇#5000\n持出現金〇〇#3000"></textarea>
+      placeholder="例:持込現金〇〇#50000＿持出現金〇〇#50000"></textarea>
 
     <!-- --- 追加コメント --- -->
+    <p>追加情報</p>
     <label class="mt-3">追加コメント</label>
     <textarea name="comments" class="form-control"
-      placeholder="店名〇〇\n開始貯玉：〇〇\n終了貯玉：〇〇"></textarea>
+      placeholder="店名〇〇開始貯玉：〇〇終了貯玉：〇〇"></textarea>
 
     <div class="d-grid gap-2 mt-4">
       <button type="submit" class="btn btn-primary">決定</button>
