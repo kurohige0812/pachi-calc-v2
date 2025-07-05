@@ -65,44 +65,71 @@ def end_page():
 
 @app.route("/box", methods=["GET", "POST"])
 def box_page():
+    """
+    POST:
+      hold     : 持ち玉
+      box_cap  : 1箱の総玉数（入力値）
+      levels   : 段数（入力値）
+    返り値:
+      [{clip, desc, calc}, …] 1250 ごとの位置 + 余り行
+    """
     if request.method == "POST":
         try:
-            hold    = int(request.form.get("hold", 0))
-            box_cap = int(request.form.get("box_cap", 1450))
-            levels  = int(request.form.get("levels", 5))
+            hold     = int(request.form.get("hold", 0))
+            box_cap  = max(int(request.form.get("box_cap", 1)), 1)
+            levels   = max(int(request.form.get("levels", 1)), 1)
 
-            # 玉数計算（段ごとの偏り対処）
-            per_lvl = box_cap // levels
-            extra   = box_cap % levels
-            one_box = (levels - 1) * per_lvl + (per_lvl + extra)
+            # 1箱内の段構成（この部分は既存ロジックを維持）
+            per_lvl  = box_cap // levels
+            extra    = box_cap % levels
+            last_lvl = per_lvl + extra
+            one_box  = box_cap                          # わかりやすく名前を保持
 
-            # 計算処理：何箱何段までか
             rows = []
-            remain = hold
-            idx = 0
-            while remain >= one_box:
-                idx += 1
-                remain -= one_box
-                rows.append({
-                    "clip": f"{idx}箱",
-                    "desc": f"{one_box * idx:,}玉",
-                    "calc": ""
-                })
+            remaining = hold
+            k = 1                                       # 1250 倍数カウンタ
 
-            if remain > 0:
-                dan = (remain // per_lvl) + (1 if remain % per_lvl else 0)
-                total = idx + (dan / levels)
+            while True:
+                target = 1250 * k                      # 今回消費する玉数
+                if remaining < target:                 # もう 1250 消費できない
+                    rows.append({
+                        "clip": "",
+                        "desc": f"余り {remaining} 玉",
+                        "calc": ""
+                    })
+                    break
+
+                remaining_after = remaining - target   # 1250 消費後の残り玉
+                # ───────── どの箱・段・余りに到達するか ─────────
+                boxes = remaining_after // one_box
+                pos   = remaining_after % one_box      # 箱内位置
+
+                if pos == 0:                           # 箱境界ジャスト
+                    desc = f"{boxes}箱 0段 余り0玉"
+                else:
+                    if pos <= per_lvl * (levels - 1):  # 上段側
+                        level = (pos + per_lvl - 1) // per_lvl
+                        rest  = pos - per_lvl * (level - 1)
+                    else:                              # 最下段
+                        level = levels
+                        rest  = pos - per_lvl * (levels - 1)
+                    desc = f"{boxes}箱 {level}段 余り{rest}玉"
+                # ────────────────────────────────────────
+
                 rows.append({
-                    "clip": f"{idx}箱{dan}段",
-                    "desc": f"{hold:,}玉 → {total:.2f}箱",
-                    "calc": f"1箱{levels}段 = {one_box:,}玉"
+                    "clip": f"{target}#",
+                    "desc": desc,
+                    "calc": ""                         # 計算式は不要なら空で
                 })
+                remaining = remaining_after
+                k += 1
 
             return jsonify(rows)
 
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 
+    # GET
     return render_template("box.html", tab="box")
 
 
