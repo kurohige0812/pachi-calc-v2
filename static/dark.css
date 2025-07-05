@@ -1,0 +1,52 @@
+/* ----- 全体レイアウト ----- */
+body{
+  font-family:"Helvetica Neue",sans-serif;
+  background:#111;          /* 黒背景 */
+  color:#eee;               /* 明るい文字 */
+  margin:0;padding:20px;
+}
+
+h1,h2{margin:10px 0 20px;color:#fff}
+
+/* セクション / カード */
+section,.section,.card{
+  background:#222;
+  border:1px solid #444;
+  border-radius:6px;
+  padding:16px 20px;
+  margin-bottom:24px;
+  box-shadow:0 2px 4px rgba(0,0,0,.4);
+}
+
+/* ----- フォーム ----- */
+label{display:block;margin:8px 0 4px}
+input,select,textarea{
+  width:100%;padding:6px 8px;box-sizing:border-box;
+  font-size:15px;border:1px solid #666;border-radius:4px;
+  background:#333;color:#fff;
+}
+input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* ----- ボタン ----- */
+button{
+  padding:8px 16px;margin:8px 10px 0 0;   /* ←右と下に余白 */
+  font-size:14px;cursor:pointer;
+  border:none;border-radius:4px;
+  background:#3498db;color:#fff;
+  transition:background .2s;
+}
+button:hover{background:#2980b9}
+button.secondary{background:#7f8c8d}
+button.secondary:hover{background:#666}
+button:disabled{background:#555;cursor:not-allowed}
+
+/* ----- 結果表示 ----- */
+.result{
+  margin-top:10px;display:inline-block;
+  background:#333;color:#0f0;
+  padding:10px;border:1px solid #666;
+  border-radius:4px;font-family:monospace;
+}
+
+/* ナビバーが暗色背景でも浮くように */
+.navbar-dark .nav-link.active{background:#0d6efd}
